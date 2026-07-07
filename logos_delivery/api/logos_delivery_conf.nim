@@ -1,30 +1,38 @@
 {.push raises: [].}
 
+import std/options
 import results
 
 import logos_delivery/api/messaging_conf
 import logos_delivery/channels/reliable_channel_manager
 
-export messaging_conf, reliable_channel_manager
+export options, messaging_conf, reliable_channel_manager
 
-type LogosDeliveryConf* = object ## Aggregates the per-layer config objects.
+type LogosDeliveryConf* = object
+  ## Aggregates the per-layer config objects. A layer is mounted iff its config
+  ## is present.
   kernelConf*: KernelConf
-  messaging*: MessagingClientConf
-  reliableChannel*: ReliableChannelManagerConf
+  messagingOverrides*: Option[MessagingClientConf]
+  channelsOverrides*: Option[ReliableChannelManagerConf]
+
+proc init*(T: type LogosDeliveryConf, kernelConf: KernelConf): LogosDeliveryConf =
+  return LogosDeliveryConf(kernelConf: kernelConf)
 
 proc init*(
     T: type LogosDeliveryConf,
-    mode: WakuMode,
+    mode: LogosDeliveryMode,
     preset: string,
     messagingOverrides: MessagingClientConf,
     channelsOverrides: ReliableChannelManagerConf,
 ): ConfResult[LogosDeliveryConf] =
   let merged = merge(?resolvePreset(preset), messagingOverrides)
-  var kernelConf = ?toKernelConf(merged, mode)
+  var kernelConf = ?toWakuNodeConf(merged, mode)
   kernelConf.preset = preset
   return ok(
     LogosDeliveryConf(
-      kernelConf: kernelConf, messaging: merged, reliableChannel: channelsOverrides
+      kernelConf: KernelConf(kernelConf),
+      messagingOverrides: some(merged),
+      channelsOverrides: some(channelsOverrides),
     )
   )
 
