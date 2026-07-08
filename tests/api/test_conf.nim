@@ -132,6 +132,7 @@ suite "parseLogosDeliveryConf - JSON parsing":
       """{"mode": "Core", "messagingOverrides": {"clusterId": 7, "reliabilityEnabled": true}}"""
     ).valueOr:
       raiseAssert error
+    require lc.messagingOverrides.isSome()
     check:
       WakuNodeConf(lc.kernelConf).clusterId == some(7'u16) # kernel field
       lc.messagingOverrides.get().reliabilityEnabled == some(true) # messaging-only
@@ -139,6 +140,7 @@ suite "parseLogosDeliveryConf - JSON parsing":
   test "messaging overrides are recorded verbatim, unset fields left none":
     let lc = parseLogosDeliveryConf("""{"messagingOverrides": {"clusterId": 7}}""").valueOr:
       raiseAssert error
+    require lc.messagingOverrides.isSome()
     let overrides = lc.messagingOverrides.get()
     check:
       overrides.clusterId == some(7'u16) # the user's override, kept as given
@@ -148,6 +150,7 @@ suite "parseLogosDeliveryConf - JSON parsing":
     let lc = parseLogosDeliveryConf("""{"preset": "twn"}""").valueOr:
       raiseAssert error
     # the user set no reliability override, but the preset supplies one
+    require lc.messagingOverrides.isSome()
     check lc.messagingOverrides.get().reliabilityEnabled.isSome()
 
   test "channelsOverrides fold into the channel conf":
@@ -155,6 +158,7 @@ suite "parseLogosDeliveryConf - JSON parsing":
       """{"channelsOverrides": {"rateLimitEnabled": true, "sdsMaxRetransmissions": 9}}"""
     ).valueOr:
       raiseAssert error
+    require lc.channelsOverrides.isSome()
     let channels = lc.channelsOverrides.get()
     check:
       channels.rateLimitEnabled == some(true)
@@ -177,6 +181,7 @@ suite "parseLogosDeliveryConf - JSON parsing":
     ).valueOr:
       raiseAssert error
     let kc = WakuNodeConf(lc.kernelConf)
+    require lc.messagingOverrides.isSome()
     check:
       kc.clusterId == some(7'u16)
       lc.messagingOverrides.get().reliabilityEnabled == some(true) # messaging-only
