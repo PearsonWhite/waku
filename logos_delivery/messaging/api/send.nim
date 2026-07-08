@@ -25,6 +25,9 @@ proc send*(
       warn "Failed to auto-subscribe", error = error
       return err("Failed to auto-subscribe before sending: " & error)
 
+  (await self.rateLimit.admit(envelope.payload)).isOkOr:
+    return err("MessagingClient.send: rate limit rejected: " & $error)
+
   let requestId = RequestId.new(self.waku.rng)
 
   let deliveryTask = DeliveryTask.new(requestId, envelope, self.waku.brokerCtx).valueOr:

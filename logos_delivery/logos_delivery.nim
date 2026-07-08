@@ -82,7 +82,12 @@ proc init*(T: type LogosDeliveryConf, wakuConf: WakuConf): LogosDeliveryConf =
   ## dedicated config will be threaded through later.
   LogosDeliveryConf(
     waku: wakuConf,
-    messaging: MessagingClientConf(useP2PReliability: wakuConf.p2pReliability),
+    messaging: MessagingClientConf(
+      useP2PReliability: wakuConf.p2pReliability,
+      rateLimit: RateLimitConfig(
+        epochPeriodSec: DefaultEpochPeriodSec, messagesPerEpoch: DefaultMessagesPerEpoch
+      ),
+    ),
     reliableChannel: ReliableChannelManagerConf(),
   )
 

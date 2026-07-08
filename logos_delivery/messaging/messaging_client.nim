@@ -6,23 +6,24 @@ import chronicles
 import
   logos_delivery/api/messaging_client_api,
   logos_delivery/waku/waku,
-  logos_delivery/messaging/delivery_service/[recv_service, send_service]
+  logos_delivery/messaging/delivery_service/[recv_service, send_service],
+  logos_delivery/messaging/rate_limit_manager/rate_limit_manager
 
 # Surfaces the messaging API interface (and its Message* events) to consumers.
 export messaging_client_api
+export rate_limit_manager
 
 type
-  MessagingClientConf* = object
-    ## Per-layer config object for the messaging API.
-    ## Kept intentionally minimal for now; the full config surface lands in a
-    ## follow-up PR. Today it only carries the p2p reliability toggle.
+  MessagingClientConf* = object ## Per-layer config object for the messaging API.
     useP2PReliability*: bool
+    rateLimit*: RateLimitConfig
 
   MessagingClient* = ref object
     brokerCtx*: BrokerContext
     waku*: Waku ## The Waku kernel this layer drives; read by `messaging/api/*`.
     sendService*: SendService
     recvService*: RecvService
+    rateLimit*: RateLimitManager
     started*: bool
 
 proc new*(
@@ -37,6 +38,7 @@ proc new*(
       waku: waku,
       sendService: sendService,
       recvService: recvService,
+      rateLimit: RateLimitManager.new(conf.rateLimit),
       brokerCtx: waku.brokerCtx,
     )
   )
