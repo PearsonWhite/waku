@@ -47,9 +47,6 @@ proc createReliableChannel*(
     causalHistorySize: DefaultCausalHistorySize,
     persistence: sdsPersistence(),
   )
-  let rateConfig = RateLimitConfig(
-    epochPeriodSec: DefaultEpochPeriodSec, messagesPerEpoch: DefaultMessagesPerEpoch
-  )
 
   let chn = ReliableChannel.new(
     channelId = channelId,
@@ -57,7 +54,6 @@ proc createReliableChannel*(
     senderId = senderId,
     segConfig = segConfig,
     sdsConfig = sdsConfig,
-    rateConfig = rateConfig,
     brokerCtx = self.brokerCtx,
   )
 
