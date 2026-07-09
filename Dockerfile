@@ -47,6 +47,7 @@ EXPOSE 30303 60000 8545
 
 # Referenced in the binary
 RUN apk add --no-cache libgcc libpq-dev bind-tools libstdc++
+RUN apk add --no-cache bash curl jq
 
 # Copy to separate location to accomodate different MAKE_TARGET values
 COPY --from=nim-build /app/build/$MAKE_TARGET /usr/local/bin/
@@ -62,32 +63,3 @@ ENTRYPOINT ["/usr/bin/wakunode"]
 # By default just show help if called without arguments
 CMD ["--help"]
 
-
-# DEBUG IMAGE ------------------------------------------------------------------
-
-# Build debug tools: heaptrack
-FROM alpine:3.18 AS heaptrack-build
-
-RUN apk update
-RUN apk add -- gdb git g++ make cmake zlib-dev boost-dev libunwind-dev
-RUN git clone https://github.com/KDE/heaptrack.git /heaptrack
-
-WORKDIR /heaptrack/build
-# going to a commit that builds properly. We will revisit this for new releases
-RUN git reset --hard f9cc35ebbdde92a292fe3870fe011ad2874da0ca
-RUN cmake -DCMAKE_BUILD_TYPE=Release ..
-RUN make -j$(nproc)
-
-
-# Debug image
-FROM prod AS debug-with-heaptrack
-
-RUN apk add --no-cache gdb libunwind
-
-# Add heaptrack
-COPY --from=heaptrack-build /heaptrack/build/ /heaptrack/build/
-
-ENV LD_LIBRARY_PATH=/heaptrack/build/lib/heaptrack/
-RUN ln -s /heaptrack/build/bin/heaptrack /usr/local/bin/heaptrack
-
-ENTRYPOINT ["/heaptrack/build/bin/heaptrack", "/usr/bin/wakunode"]
