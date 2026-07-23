@@ -14,6 +14,7 @@ import
   libp2p/builders,
   libp2p/switch,
   libp2p/transports/[transport, tcptransport, wstransport]
+import ./delivery_dialer
 
 # override nim-libp2p default value (which is also 1)
 const MaxConnectionsPerPeer* = 1
@@ -132,4 +133,6 @@ proc newWakuSwitch*(
   if not rendezvous.isNil():
     b = b.withRendezVous()
 
-  b.build()
+  let switch = b.build()
+  DeliveryDialer.install(switch)
+  switch
